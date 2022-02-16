@@ -65,7 +65,7 @@ open_browser () {
 
 trigger () {
   echo "${HEALTH_PROBE_FILE} is changed."
-  # kill -9 ${BG_PROCESS_ID}
+  kill -9 ${BG_PROCESS_ID}
   establish_port_forward_connection 
 }
 
@@ -89,7 +89,7 @@ while getopts $options option; do
   esac
 done
 
-if [ ${OPTIND} -eq 1 ]; then echo "No options were passed"; echo ""; echo "Usage: ${usage}"; fi
+if [ ${OPTIND} -eq 1 ]; then echo "No options were passed"; echo ""; echo "Usage: ${usage}"; exit 1;  fi
 
 check_os
 check_dependencies
