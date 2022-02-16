@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HEALTH_PROBE_FILE="/tmp/kpf-health-probe.txt"
-CONFIG_FILE="/Users/atinsinghal97/Github/kubectl-port-forward-heaven/kpf-config.json"
+CONFIG_FILE="$(dirname "$0")/kpf-config.json"
 FIRST_RUN="true"
 KEY=""
 OS=""
