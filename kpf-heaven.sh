@@ -4,8 +4,6 @@ HEALTH_PROBE_FILE="/tmp/kpf-health-probe.txt"
 CONFIG_FILE="$(dirname "$0")/kpf-config.json"
 FIRST_RUN="true"
 EXPECTED_KEYS=( label local_port namespace protocol remote_port service )
-BROWSER_WSL="explorer.exe"
-BROWSER_MAC="Google Chrome"
 
 check_for_config_file () {
   if [ ! -f "${CONFIG_FILE}" ]; then
@@ -103,9 +101,9 @@ open_browser () {
   PORT="${2}"
   if [[ "${FIRST_RUN}" == "true" ]]; then
     if [[ "${OS}" == "Mac" ]]; then
-      open -a "${BROWSER_MAC}" "${PROTOCOL}://localhost:${PORT}"
+      open "${PROTOCOL}://localhost:${PORT}"
     elif [[ "${OS}" == "Linux" ]]; then #WSL
-      ${BROWSER_WSL} "${PROTOCOL}://localhost:${PORT}"
+      explorer.exe "${PROTOCOL}://localhost:${PORT}"
     fi
     FIRST_RUN="false"
   fi

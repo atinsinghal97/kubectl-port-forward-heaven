@@ -4,7 +4,7 @@
 
 If work with kubernetes port forward utility often, you would know how frustrating it is when "the pipe keeps breaking" or other similar errors are encountered. This utility tries to solve this problem by continuously checking the connection for errors and re-establishes the connection if errors are observed.
 
-Apart from that, it will also open the URL in the browser after doing a port-forward.
+Apart from that, this will also open the URL in your default browser after doing the initial port-forward.
 
 ## Prereqs
 
@@ -33,5 +33,3 @@ This utility requires `inotifywait` for WSL and `fswatch` for Mac.
 - `protocol` should be set to either `https` or `http`. This will be used when opening the URL in your browser.
 
 A sample `kpf-config.json` file is provided for reference.
-
-Note: This utility uses `explorer.exe` on WSL and `Google Chrome` on Mac to open URLs.
