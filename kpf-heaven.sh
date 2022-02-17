@@ -3,17 +3,64 @@
 HEALTH_PROBE_FILE="/tmp/kpf-health-probe.txt"
 CONFIG_FILE="$(dirname "$0")/kpf-config.json"
 FIRST_RUN="true"
-KEY=""
-OS=""
-BG_PROCESS_ID=""
+EXPECTED_KEYS=( label local_port namespace protocol remote_port service )
+BROWSER_WSL="explorer.exe"
+BROWSER_MAC="Google Chrome"
 
-usage="./$(basename "$0") [-h] [-c] [-s] [-w]
+check_for_config_file () {
+  if [ ! -f "${CONFIG_FILE}" ]; then
+    echo "Config file not found. Exiting."
+    exit 1
+  fi
+}
+
+load_config () {
+  check_for_config_file
+
+  JQ_KEYS=( $(cat ${CONFIG_FILE} | jq -r '. |= keys' | tr -d '[]",') )
+  if [[ " ${JQ_KEYS[*]} " =~ " h " ]]; then 
+    echo "'h' is a reserved key. Please replace the key in the config file. Aborting..."
+    exit 1
+  fi
+  options=":h$(echo ${JQ_KEYS[@]} | tr -d ' ')"
+  for jq_key in ${JQ_KEYS[@]}; do
+    RETURNED_KEYS=( $(cat ${CONFIG_FILE} | jq ".${jq_key}" | jq keys | tr -d '[]",') )
+    if [[ "${RETURNED_KEYS[@]}" != "${EXPECTED_KEYS[@]}" ]]; then
+      echo "Config file is invalid. Exiting."
+      exit 1
+    fi
+  done
+}
+
+load_config
+
+usage="./$(basename "$0") [-option]
 Heaven for kubectl port forward :)
-where:
-    -h  help
-    -c  argocd
-    -s  stackrox
-    -w  argo-workflows-server"
+options:
+    -h  help"
+
+for jq_key in ${JQ_KEYS[@]}; do
+  label=$(cat ${CONFIG_FILE} | jq -r ".${jq_key}.label")
+  usage="${usage}
+    -${jq_key}  ${label}"
+done
+
+CASE_OPTIONS="$(echo ${JQ_KEYS[@]} | tr ' ' '|')"
+eval "
+while getopts \"\$options\" option; do
+  case \"\$option\" in
+    $CASE_OPTIONS) KEY=\"\$option\" ;;
+    *) echo \"\$usage\"; exit;;
+  esac
+done
+"
+
+if [[ ${OPTIND} -eq 1 ]]; then
+  echo "No flags were used. Aborting..."
+  echo ""
+  echo "Usage: ${usage}"
+  exit 1
+fi
 
 check_os () {
   OS_CODE="$(uname -s)"
@@ -44,6 +91,7 @@ establish_port_forward_connection () {
   REMOTE_PORT=$(jq -r ".${KEY}.remote_port" "${CONFIG_FILE}")
   PROTOCOL=$(jq -r ".${KEY}.protocol" "${CONFIG_FILE}")
 
+  echo "Establishing port forward connection to ${SERVICE} -n ${NAMESPACE}..."
   kubectl port-forward -n "${NAMESPACE}" "${SERVICE}" "${LOCAL_PORT}":"${REMOTE_PORT}" 2> "${HEALTH_PROBE_FILE}" 1> /dev/null &
   BG_PROCESS_ID=$!
   open_browser "${PROTOCOL}" "${LOCAL_PORT}"
@@ -55,9 +103,9 @@ open_browser () {
   PORT="${2}"
   if [[ "${FIRST_RUN}" == "true" ]]; then
     if [[ "${OS}" == "Mac" ]]; then
-      open -a "Google Chrome" "${PROTOCOL}://localhost:${PORT}"
+      open -a "${BROWSER_MAC}" "${PROTOCOL}://localhost:${PORT}"
     elif [[ "${OS}" == "Linux" ]]; then #WSL
-      explorer.exe "${PROTOCOL}://localhost:${PORT}"
+      ${BROWSER_WSL} "${PROTOCOL}://localhost:${PORT}"
     fi
     FIRST_RUN="false"
   fi
@@ -78,18 +126,6 @@ monitor () {
     done
   fi
 }
-
-options=':hcsw'
-while getopts $options option; do
-  case "${option}" in
-    c) KEY="${option}" ;;
-    s) KEY="${option}" ;;
-    w) KEY="${option}" ;;
-    *) echo "${usage}"; exit;;
-  esac
-done
-
-if [ ${OPTIND} -eq 1 ]; then echo "No options were passed"; echo ""; echo "Usage: ${usage}"; exit 1;  fi
 
 check_os
 check_dependencies
