@@ -1,9 +1,13 @@
 #!/bin/bash
 
+set -e
+
 HEALTH_PROBE_FILE="/tmp/kpf-health-probe.txt"
-CONFIG_FILE="$(dirname "$0")/kpf-config.json"
+CONFIG_FILE=${KPF_CONFIG_FILE:="$(dirname "$0")/kpf-config-sample.json"}
+echo "Config file used: $CONFIG_FILE"
 FIRST_RUN="true"
 EXPECTED_KEYS=( label local_port namespace protocol remote_port service )
+RE='^[0-9]+$' # Regular expression for integer
 
 check_for_config_file () {
   if [ ! -f "${CONFIG_FILE}" ]; then
@@ -19,9 +23,24 @@ load_config () {
   if [[ " ${JQ_KEYS[*]} " =~ " h " ]]; then 
     echo "'h' is a reserved key. Please replace the key in the config file. Aborting..."
     exit 1
+  elif [[ " ${JQ_KEYS[*]} " =~ " d " ]]; then 
+    echo "'d' is a reserved key. Please replace the key in the config file. Aborting..."
+    exit 1
   fi
-  options=":h$(echo ${JQ_KEYS[@]} | tr -d ' ')"
+
+  options=":hd$(echo ${JQ_KEYS[@]} | tr -d ' ')"
+
   for jq_key in ${JQ_KEYS[@]}; do
+    if [[ ${#jq_key} != 1 ]]; then
+      echo "Key '${jq_key}' is not a single character. Please replace the key in the config file. Aborting..."
+      exit 1
+    fi
+
+    if [[ ${jq_key} =~ $RE ]] ; then
+      echo "Integer value '${jq_key}' is not allowed as a key. Please replace the key in the config file. Aborting..."
+      exit 1
+    fi
+
     RETURNED_KEYS=( $(cat ${CONFIG_FILE} | jq ".${jq_key}" | jq keys | tr -d '[]",') )
     if [[ "${RETURNED_KEYS[@]}" != "${EXPECTED_KEYS[@]}" ]]; then
       echo "Config file is invalid. Exiting."
@@ -35,7 +54,8 @@ load_config
 usage="./$(basename "$0") [-option]
 Heaven for kubectl port forward :)
 options:
-    -h  help"
+    -h  help
+    -d  debug: show error from last run"
 
 for jq_key in ${JQ_KEYS[@]}; do
   label=$(cat ${CONFIG_FILE} | jq -r ".${jq_key}.label")
@@ -48,7 +68,18 @@ eval "
 while getopts \"\$options\" option; do
   case \"\$option\" in
     $CASE_OPTIONS) KEY=\"\$option\" ;;
-    *) echo \"\$usage\"; exit;;
+    d)
+      if ! [[ -f "${HEALTH_PROBE_FILE}" ]]; then
+        echo 'Debug file not found. Exiting.';
+        exit 1;
+      else
+        echo Contents:;
+        cat ${HEALTH_PROBE_FILE};
+      fi;
+      exit;;
+    *)
+      echo \"\$usage\";
+      exit;;
   esac
 done
 "
