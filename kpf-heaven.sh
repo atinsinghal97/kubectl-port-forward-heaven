@@ -121,9 +121,11 @@ establish_port_forward_connection () {
   PROTOCOL=$(jq -r ".${KEY}.protocol" "${CONFIG_FILE}")
 
   echo "Establishing port forward connection to ${SERVICE} -n ${NAMESPACE}..."
+  touch ${HEALTH_PROBE_FILE}
   kubectl port-forward -n "${NAMESPACE}" "${SERVICE}" "${LOCAL_PORT}":"${REMOTE_PORT}" 2> "${HEALTH_PROBE_FILE}" 1> /dev/null &
   BG_PROCESS_ID=$!
   open_browser "${PROTOCOL}" "${LOCAL_PORT}"
+  cat ${HEALTH_PROBE_FILE}
   monitor
 }
 
