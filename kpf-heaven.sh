@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 HEALTH_PROBE_FILE="/tmp/kpf-health-probe.txt"
 CONFIG_FILE=${KPF_CONFIG_FILE:="$(dirname "$0")/kpf-config-sample.json"}
 echo "Config file used: $CONFIG_FILE"
