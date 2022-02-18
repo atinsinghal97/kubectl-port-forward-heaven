@@ -1,0 +1,18 @@
+{
+  "c": {
+    "label": "app-1",
+    "namespace": "ns-1",
+    "service": "svc/service-name-1",
+    "local_port": "8080",
+    "remote_port": "443",
+    "protocol": "https"
+  },
+  "s": {
+    "label": "app-2",
+    "namespace": "ns-2",
+    "service": "svc/service-name-2",
+    "local_port": "8081",
+    "remote_port": "443",
+    "protocol": "https"
+  }
+}
