@@ -2,13 +2,13 @@
 
 ## What is this?
 
-If work with kubernetes port forward utility often, you would know how frustrating it is when "the pipe keeps breaking" or other similar errors are encountered. This utility tries to solve this problem by continuously checking the connection for errors and re-establishes the connection if errors are observed.
+If you work with kubernetes port forward utility often, you would know how frustrating it is when "the pipe keeps breaking" or other similar errors are encountered. This utility tries to solve this problem by continuously checking the connection for errors and re-establishes the connection if errors are observed.
 
-Apart from that, this will also open the URL in your default browser after doing the initial port-forward.
+Apart from that, this will also open the URL in your default browser after doing the initial port-forward (works only with WSL and Mac as of now).
 
 ## Prereqs
 
-This utility requires `inotifywait` for WSL and `fswatch` for Mac.
+This utility requires `inotifywait` for WSL/Linux and `fswatch` for Mac.
 
 ## How to configure?
 
@@ -33,5 +33,6 @@ This utility requires `inotifywait` for WSL and `fswatch` for Mac.
 - `service` should be set to "svc/\<service-name\>".
 - `local_port` and `remote_port` are the port number for your local and remote service respectively.
 - `protocol` should be set to either `https` or `http`. This will be used when opening the URL in your browser.
+- If you wish to disable auto-opening the url in browser, set `AUTO_OPEN_BROWSER` to `false` [in this file](kpf-heaven.sh#L9). (Will be moved to the json config file in future releases.)
 
 A sample config file is provided for reference [here](kpf-config-sample.json).

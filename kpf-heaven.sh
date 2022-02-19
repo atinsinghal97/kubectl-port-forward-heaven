@@ -6,6 +6,7 @@ echo "Config file used: $CONFIG_FILE"
 FIRST_RUN="true"
 EXPECTED_KEYS=( label local_port namespace protocol remote_port service )
 RE='^[0-9]+$' # Regular expression for integer
+AUTO_OPEN_BROWSER="true"
 
 check_for_config_file () {
   if [ ! -f "${CONFIG_FILE}" ]; then
@@ -123,6 +124,7 @@ establish_port_forward_connection () {
   kubectl port-forward -n "${NAMESPACE}" "${SERVICE}" "${LOCAL_PORT}":"${REMOTE_PORT}" 2> "${HEALTH_PROBE_FILE}" 1> /dev/null &
   BG_PROCESS_ID=$!
   open_browser "${PROTOCOL}" "${LOCAL_PORT}"
+  sleep 1
   cat ${HEALTH_PROBE_FILE}
   monitor
 }
@@ -130,7 +132,7 @@ establish_port_forward_connection () {
 open_browser () {
   PROTOCOL="${1}"
   PORT="${2}"
-  if [[ "${FIRST_RUN}" == "true" ]]; then
+  if [[ "${AUTO_OPEN_BROWSER}" == "true" && "${FIRST_RUN}" == "true" ]]; then
     if [[ "${OS}" == "Mac" ]]; then
       open "${PROTOCOL}://localhost:${PORT}"
     elif [[ "${OS}" == "Linux" ]]; then #WSL
