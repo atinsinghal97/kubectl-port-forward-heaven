@@ -106,7 +106,7 @@ check_dependencies () {
     DEPENDENCY_STATUS="command -v inotifywait"
   fi
 
-  if [[ -z DEPENDENCY_STATUS ]]; then
+  if [[ -z ${DEPENDENCY_STATUS} ]]; then
     echo "Dependency not found. Please install fswatch (mac) or inotifywait (WSL)."
     exit 1
   fi
