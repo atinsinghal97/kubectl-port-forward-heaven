@@ -4,9 +4,8 @@ HEALTH_PROBE_FILE="/tmp/kpf-health-probe.txt"
 CONFIG_FILE=${KPF_CONFIG_FILE:="$(dirname "$0")/kpf-config-sample.json"}
 echo "Config file used: $CONFIG_FILE"
 FIRST_RUN="true"
-EXPECTED_KEYS=( label local_port namespace protocol remote_port service )
+EXPECTED_KEYS=( label local_port namespace open_browser protocol remote_port require_namespace_suffix service )
 RE='^[0-9]+$' # Regular expression for integer
-AUTO_OPEN_BROWSER="true"
 
 check_for_config_file () {
   if [ ! -f "${CONFIG_FILE}" ]; then
@@ -40,6 +39,10 @@ load_config () {
       exit 1
     fi
 
+    if [[ $(cat ${CONFIG_FILE} | jq -r ".${jq_key}.require_namespace_suffix") == "true" ]]; then
+      options="$(echo ${options} | sed -e "s/${jq_key}/${jq_key}:/g")"
+    fi
+
     RETURNED_KEYS=( $(cat ${CONFIG_FILE} | jq ".${jq_key}" | jq keys | tr -d '[]",') )
     if [[ "${RETURNED_KEYS[@]}" != "${EXPECTED_KEYS[@]}" ]]; then
       echo "Config file is invalid. Exiting."
@@ -53,20 +56,30 @@ load_config
 usage="./$(basename "$0") [-option]
 Heaven for kubectl port forward :)
 options:
-    -h  help
-    -d  debug: show error from last run"
+    -h   help
+    -d   debug: show error from last run"
 
 for jq_key in ${JQ_KEYS[@]}; do
   label=$(cat ${CONFIG_FILE} | jq -r ".${jq_key}.label")
+  if [[ $(cat ${CONFIG_FILE} | jq -r ".${jq_key}.require_namespace_suffix") == "true" ]]; then
+    arg=":"
+  else
+    arg=" "
+  fi
   usage="${usage}
-    -${jq_key}  ${label}"
+    -${jq_key}${arg}  ${label}"
 done
+
+usage="${usage}
+Options with : require an argument."
 
 CASE_OPTIONS="$(echo ${JQ_KEYS[@]} | tr ' ' '|')"
 eval "
 while getopts \"\$options\" option; do
   case \"\$option\" in
-    $CASE_OPTIONS) KEY=\"\$option\" ;;
+    $CASE_OPTIONS)
+      KEY=\"\$option\";
+      NAMESPACE_SUFFIX=\"\$OPTARG\";;
     d)
       if ! [[ -f "${HEALTH_PROBE_FILE}" ]]; then
         echo 'Debug file not found. Exiting.';
@@ -118,10 +131,11 @@ establish_port_forward_connection () {
   LOCAL_PORT=$(jq -r ".${KEY}.local_port" "${CONFIG_FILE}")
   REMOTE_PORT=$(jq -r ".${KEY}.remote_port" "${CONFIG_FILE}")
   PROTOCOL=$(jq -r ".${KEY}.protocol" "${CONFIG_FILE}")
+  AUTO_OPEN_BROWSER=$(jq -r ".${KEY}.open_browser" "${CONFIG_FILE}")
 
-  echo "Establishing port forward connection to ${SERVICE} -n ${NAMESPACE}..."
+  echo "Establishing port forward connection to ${SERVICE} -n ${NAMESPACE}${NAMESPACE_SUFFIX}..."
   touch ${HEALTH_PROBE_FILE}
-  kubectl port-forward -n "${NAMESPACE}" "${SERVICE}" "${LOCAL_PORT}":"${REMOTE_PORT}" 2> "${HEALTH_PROBE_FILE}" 1> /dev/null &
+  kubectl port-forward -n "${NAMESPACE}${NAMESPACE_SUFFIX}" "${SERVICE}" "${LOCAL_PORT}":"${REMOTE_PORT}" 2> "${HEALTH_PROBE_FILE}" 1> /dev/null &
   BG_PROCESS_ID=$!
   open_browser "${PROTOCOL}" "${LOCAL_PORT}"
   sleep 1

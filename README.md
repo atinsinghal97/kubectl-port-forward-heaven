@@ -23,7 +23,9 @@ This utility requires `inotifywait` for WSL/Linux and `fswatch` for Mac.
     "service": "",
     "local_port": "",
     "remote_port": "",
-    "protocol": ""
+    "protocol": "",
+    "open_browser": "",
+    "require_namespace_suffix": ""
   }
   ```
 
@@ -33,6 +35,7 @@ This utility requires `inotifywait` for WSL/Linux and `fswatch` for Mac.
 - `service` should be set to "svc/\<service-name\>".
 - `local_port` and `remote_port` are the port number for your local and remote service respectively.
 - `protocol` should be set to either `https` or `http`. This will be used when opening the URL in your browser.
-- If you wish to disable auto-opening the url in browser, set `AUTO_OPEN_BROWSER` to `false` [in this file](kpf-heaven.sh#L9). (Will be moved to the json config file in future releases.)
+- `open_browser` can be set to either `true` or `false`. Set to `true` if you want to auto-open the url in the browser.
+- `require_namespace_suffix` should either be set to `true` or `false`. Set it to `true` if you need to use a custom namespace suffix. The suffix is provided as an argument to the script after the app flag.
 
 A sample config file is provided for reference [here](kpf-config-sample.json).
